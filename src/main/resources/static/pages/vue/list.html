@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+    <title>节目管理</title>
+</head>
+<body>
+<div id="list">
+    <div id="tableComponentApp">
+
+            <el-card>
+                <div>
+                    <!--<div align="right">-->
+                    <!--<el-button type="text" @click="addProperty()" >新增属性</el-button>-->
+                    <!--<el-button type="text" @click="addChannel()" >新增节目</el-button>-->
+                    <!--</div>-->
+                    <el-input
+                            placeholder="节目ID"
+                            v-model="params.id"
+                            style="width: 17%;margin-right:1%;"
+                            clearable>
+                    </el-input>
+
+                    <el-select v-model="params.type" @change="selectTags" clearable style="width:17%;margin-right:1%" placeholder="请选择分类">
+                        <el-option
+                                v-for="item in types"
+                                :key="item.id"
+                                :label="item.type"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+
+                    <el-select v-model="params.tag" clearable  style="width:17%; margin-right:1%" placeholder="请选择标签">
+                        <el-option
+                                v-for="item in tags"
+                                :key="item"
+                                :label="item"
+                                :value="item">
+                        </el-option>
+                    </el-select>
+
+                    <el-input
+                            placeholder="节目名称"
+                            v-model="params.title"
+                            style="width: 17%;margin-right: 1%"
+                            clearable>
+                    </el-input>
+
+                    <el-input placeholder="请输入内容" v-model="params.property_value"  style="width:20%; margin-right: 1%; margin-bottom: 10px" class="input-with-select">
+                        <el-select v-model="params.property_name" style="width:90px" clearable @change="test" slot="prepend">
+                            <el-option
+                                    v-for="item in properties"
+                                    :key="item.id"
+                                    :label="item.propertyShow"
+                                    :value="item.propertyName">
+                            </el-option>
+                        </el-select>
+                    </el-input>
+
+                    <el-button icon="el-icon-search" circle type="primary" @click="selectList"></el-button>
+
+                    <el-table
+                    :data="body.data"
+                    border
+                    style="width: 100%">
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="90"
+                                show-overflow-tooltip>
+                        </el-table-column>
+                        <el-table-column
+                                prop="type"
+                                label="分类"
+                                width="90"
+                                show-overflow-tooltip
+                        ></el-table-column>
+                        <el-table-column
+                                prop="tag"
+                                label="标签"
+                                width="120"
+                                show-overflow-tooltip>
+                            <template slot-scope="scope" >
+                                <el-tag v-for="t in scope.row.tag" type="info" size="mini">{{t}}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column
+                                prop="title"
+                                label="节目名称"
+                                show-overflow-tooltip>
+                        </el-table-column>
+                        <el-table-column label="推荐指数"
+                                         prop="ratings"
+                                         width="90">
+                        </el-table-column>
+                <!--<el-table-column-->
+                        <!--v-for="item in head"-->
+                        <!--:prop="item.propertyName"-->
+                        <!--:label="item.propertyShow"-->
+                        <!--show-overflow-tooltip-->
+                <!--&gt;-->
+                <!--</el-table-column>-->
+                <el-table-column
+                        fixed="right"
+                        label="文件管理"
+                        width="100">
+                    <template slot-scope="scope">
+                        <el-button @click="toPic(scope.row.id)" type="text" size="small">海报</el-button>
+                        <el-button @click="toVideo(scope.row.id)" type="text" size="small">视频</el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        width="100">
+                    <template slot-scope="scope">
+                        <el-button @click="edit(scope.row.id)" type="text" size="small">编辑</el-button>
+                        <el-button @click.native.prevent="deleteById(scope.$index, body,scope.row.id)" type="text" size="small">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination background
+                           @size-change="handleSizeChange"
+                           @current-change="handleCurrentChange"
+                           :current-page="body.curr"
+                           :page-sizes="[5, 10, 50, 100, 200]"
+                           :page-size="body.size"
+                           layout="total, sizes, prev, pager, next, jumper"
+                           :total="body.count">
+            </el-pagination>
+            </el-card>
+        </div>
+    </div>
+</div>
+<script>
+    new Vue({
+        el:'#list',
+        data() {
+            return {
+                // head:[],
+                body:{},
+                params:{
+                    id: '',
+                    type: '',
+                    tag: '',
+                    title: '',
+                    property_name: '',
+                    property_value: ''
+                },
+                types: [],
+                tags:[],
+                properties:[]
+            }
+        },
+        created: function() {
+            var _this = this;
+            // $.get(getURL("properties"), function (result) {
+            //     _this.head = result;
+            // });
+            $.get(getURL("list"),{params: JSON.stringify(_this.params)}, function (result) {
+                _this.body = result;
+            });
+            $.get(getURL("types"), function (result) {
+                _this.types = result
+            });
+            $.get(getURL("properties"), function (result) {
+                _this.properties=result;
+            })
+        },
+        methods: {
+            deleteById(index,body,id) {
+                var _this = this;
+                _this.$confirm('此操作将永久删除'+id+', 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.post(getURL("delete"), {id:id}, function (result) {
+                        _this.$alert(result);
+                        if (result == 'success') {
+                            body.data.splice(index, 1);//删除表格中的一行
+                        }
+                    });
+                }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                    });
+                })
+            },
+            edit(data) {
+                window.location.href=getURL("pages/vue/modify.html")+"?id="+data
+            },
+            toPic(data) {
+                window.location.href=getURL("pages/file/picManage.html")+"?id="+data
+            },
+            toVideo(data) {
+                window.location.href=getURL("pages/file/videoManage.html")+"?id="+data
+            },
+            handleSizeChange(val) {
+                this.body.size = val;
+                this.body.curr = 1;
+                this.getList();
+            },
+            handleCurrentChange(val) {
+                this.body.curr = val;
+                this.getList();
+            },
+            //获取刷新列表数据
+            getList() {
+                var _this = this;
+                _this.loading = true;
+                $.get(getURL("list"), {page: _this.body.curr, limit: _this.body.size, params: JSON.stringify(_this.params)}, data => {
+                    console.log(_this.params)
+                    _this.loading = false;
+                    _this.body = eval(data)
+                })
+            },
+            selectTags() {
+                var _this = this;
+                _this.tag = '';
+                $.get(getURL("type/tag"), {type: _this.params.type}, function (result) {
+                    _this.tags=result;
+                })
+            },
+            selectList() {
+                var _this = this;
+                _this.loading = true;
+                $.get(getURL("list"), {page: '', limit:'', params: JSON.stringify(_this.params)}, data => {
+                    console.log(_this.params)
+                    _this.loading = false;
+                    _this.body = eval(data)
+                })
+            }
+            // ,
+            // addChannel() {
+            //     window.location.href=getURL('pages/vue/add.html')
+            // },
+            // addProperty() {
+            //     window.location.href=getURL('pages/vue/propertyAdd.html')
+            // }
+        }
+    })
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>属性管理</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+</head>
+<body>
+<div id="list1">
+    <div id="tableComponentApp">
+        <div>
+            <!--<div align="right">-->
+                <!--<el-button type="text" @click="addProperty()" >新增属性</el-button>-->
+                <!--<el-button type="text" @click="addChannel()" >新增节目</el-button>-->
+            <!--</div>-->
+            <el-card>
+            <el-table
+                    :data="body.data"
+                    style="width: 100%">
+                <el-table-column
+                        prop="id"
+                        label="ID"
+                        show-overflow-tooltip
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="propertyShow"
+                        label="属性"
+                        show-overflow-tooltip
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="propertyName"
+                        label="属性名"
+                        show-overflow-tooltip
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="propertyTips"
+                        label="提示"
+                        show-overflow-tooltip
+                >
+                </el-table-column>
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        width="100">
+                    <template slot-scope="scope">
+                        <el-button @click.native.prevent="deleteById(scope.$index, body,scope.row.id)" type="text" size="small">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            </el-card>
+        </div>
+    </div>
+</div>
+<script>
+    new Vue({
+        el:'#list1',
+        data() {
+            return {
+                body:[]
+            }
+        },
+        created: function() {
+            var _this = this;
+            $.get(getURL("property/manage/list"), function (result) {
+                _this.body = result;
+            })
+        },
+        methods: {
+            deleteById(index,body,id) {
+                var _this = this;
+                _this.$confirm('确认删除'+id+'吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.post(getURL("property/manage/delete"), {id:id}, function (result) {
+                    _this.$alert(result);
+                    if (result == 'success') {
+                        body.data.splice(index, 1); //删除表格中的一行
+                    }
+                });
+            }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            })
+            }
+            // ,
+            // addChannel() {
+            //     window.location.href=getURL('pages/vue/add.html')
+            // },
+            // addProperty() {
+            //     window.location.href=getURL('pages/vue/propertyAdd.html')
+            // }
+        }
+    })
+</script>
+</body>
+</html>

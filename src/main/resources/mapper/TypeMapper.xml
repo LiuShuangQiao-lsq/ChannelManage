@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tb.demo.mapper.TypeMapper">
+
+    <select id="selectTypes" resultType="String">
+        select type from channel_type
+    </select>
+
+    <select id="selectType" resultType="Map">
+        select id,type from channel_type
+    </select>
+
+    <select id="selectTagsByType" resultType="String">
+        select tag from channel_tag
+          where type = #{type}
+    </select>
+
+    <select id="seleteTypeById" resultType="String">
+        select type from channel_type where id=#{id}
+    </select>
+
+    <select id="selectTagByType" resultType="Map">
+        select id, tag from channel_tag where type=#{type}
+    </select>
+
+
+    <insert id="addType" parameterType="com.tb.demo.pojo.Tag" useGeneratedKeys="true" keyProperty="id">
+        insert into channel_type (type)
+          values (#{type})
+    </insert>
+
+    <insert id="addTags">
+        insert into channel_tag (type, tag)
+          values
+        <foreach collection="tagList" item="tag" separator=",">
+          (#{type}, #{tag})
+        </foreach>
+    </insert>
+
+    <insert id="addTag" parameterType="com.tb.demo.pojo.Tag" useGeneratedKeys="true" keyProperty="id">
+        insert into channel_tag(type, tag)
+          value (#{type}, #{tag})
+    </insert>
+
+    <delete id="deleteType">
+        delete from channel_type where id=#{id}
+    </delete>
+    <delete id="deleteTagByType">
+        delete from channel_tag where type=#{id}
+    </delete>
+
+    <delete id="deleteTag">
+        delete from channel_tag where id = #{id}
+    </delete>
+
+    <update id="modifyType">
+        update channel_type set type=#{type}
+        where id=#{id}
+    </update>
+
+</mapper>

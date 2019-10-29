@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>新增节目</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+    <style>
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+</head>
+<body>
+<div id="test">
+    <el-form id="addForm" label-width="80px">
+        <div  id="property">
+            <!--<div align="right">-->
+                <!--<el-button type="text" @click="addProperty()" >新增属性</el-button>-->
+                <!--<el-button type="text" @click="properties()" >管理属性</el-button>-->
+            <!--</div>-->
+            <el-card>
+                <div class="user_left">
+                    <el-form-item label="节目名称" prop="title">
+                        <el-input v-model="title"></el-input>
+                    </el-form-item>
+                    <el-form-item label="分类" prop="type">
+                        <el-select v-model="type" @change="selectTags" style="width:100%" placeholder="请选择分类">
+                            <el-option
+                                    v-for="item in types"
+                                    :key="item.id"
+                                    :label="item.type"
+                                    :value="item.id">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="标签">
+                        <el-select v-model="t" multiple style="width:100%" placeholder="请选择">
+                            <el-option
+                                    v-for="item in tags"
+                                    :key="item"
+                                    :label="item"
+                                    :value="item">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+
+                    <div  v-for="item in list">
+                        <el-form-item :label="item.propertyShow" :prop="item.propertyName">
+                            <el-input v-model="item.pvalue" :placeholder="item.propertyTips"></el-input>
+                        </el-form-item>
+                    </div>
+
+                    <el-form-item label="推荐系数">
+                        <el-rate v-model="ratings" style="margin-top: 10px;margin-left: 1px"></el-rate>
+                    </el-form-item>
+
+                    <el-form-item>
+                        <el-upload
+                                ref="my-upload"
+                                drag
+                                :action="getUploadURL()"
+                                :on-remove="handleRemove"
+                                :on-success="putFileName"
+                                accept="image/png, image/jpeg"
+                                multiple>
+                            <i class="el-icon-upload"></i>
+                            <div class="el-upload__text">上传海报</div>
+                            <div class="el-upload__text">将图片拖到此处，或<em>点击上传</em></div>
+                            <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+                        </el-upload>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="submitForm()" round>确认添加</el-button>
+                        <el-button @click="resetForm()" round >重置</el-button>
+                        <el-button @click="getList()" round>查看所有节目</el-button>
+                    </el-form-item>
+                </div>
+            </el-card>
+        </div>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el:'#test',
+        data() {
+            return {
+                list:[],
+                types:[],
+                type:'',
+                tags:[],
+                t:[],
+                ratings:1,
+                title:'',
+                fileNames: []
+            }
+        },
+        created: function() {
+            var url = getURL("properties");
+            var _this = this;
+            $.get(url, function (result) {
+                var data = eval(result);
+                var lists=[];
+                for (var i=0;i<data.length;i++){
+                    var obj=data[i];
+                    obj.pvalue = '';
+                    lists.push(obj)
+                }
+                _this.list = lists;
+            });
+            $.get(getURL("types"), function (result) {
+                _this.types = result
+            });
+        },
+        methods:{
+            getList() {
+                window.location.href=getURL('pages/vue/list.html')
+            },
+            submitForm() {
+                var _this = this;
+                var list = this.list;
+                if (_this.title == '') {
+                    _this.$alert('请输入节目名称', '提示', {
+                        confirmButtonText: '确定'
+                    })
+                } else if (_this.type == '') {
+                    _this.$alert('请选择节目分类', '提示', {
+                        confirmButtonText: '确定'
+                    })
+                } else if (_this.t == '') {
+                    _this.$alert('请选择节目标签', '提示', {
+                        confirmButtonText: '确定'
+                    })
+                } else {
+                    var data = {    //处理参数
+                        title:_this.title,
+                        type:_this.type,
+                        tag:JSON.stringify(_this.t),
+                        ratings: _this.ratings,
+                        fileList:JSON.stringify(_this.fileNames)
+                    };
+                    for (var i=0;i<list.length;i++) {
+                        var obj = list[i];
+                        data[obj.propertyName] = obj.pvalue
+                    }
+                    $.post(getURL("insert"),data, function (data) {
+                        _this.$alert(data);
+                        if (data == 'success') {    //清空表单
+                            _this.resetForm()
+                        }
+                    })
+                }
+            },
+            selectTags() {
+                var _this = this;
+                _this.tag = '';
+                $.get(getURL("type/tag"), {type: _this.type}, function (result) {
+                    _this.tags=result;
+                })
+            },
+            resetForm() {
+                var _this = this;
+                var list = this.list;
+                _this.title = '';
+                _this.type='';
+                _this.t=[];
+                _this.tags=[];
+                _this.ratings=1;
+
+                for (var i=0;i<list.length;i++) {
+                    var obj = list[i];
+                    obj.pvalue = ''
+                }
+                this.$refs['my-upload'].clearFiles();
+                _this.fileNames = []
+            },
+            // addProperty() {
+            //     window.location.href=getURL('pages/vue/propertyAdd.html')
+            // },
+            // properties() {
+            //     window.location.href=getURL('pages/vue/property.html')
+            // },
+            getUploadURL() {
+                return getURL("pic/upload")
+            },
+            putFileName(response,file) {
+                var fileProp={
+                    fileName:eval(file).name,
+                    newName:response
+                };
+                this.fileNames.push(fileProp);
+            },
+            handleRemove(file,fileList) {
+                var fileName = [];
+                //删除文件
+                $.get(getURL("pic/delete"),{url:file.response});
+                for(var i in fileList) {
+                    var obj = fileList[i];
+                    fileName.push({
+                        fileName:obj.name,
+                        newName:obj.response
+                    })
+                }
+                this.fileNames = fileName;
+                console.log(this.fileNames)
+            }
+        }
+    });
+</script>
+</body>
+</html>

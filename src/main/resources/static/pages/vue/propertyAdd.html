@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加属性</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+    <style>
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+</head>
+<body>
+<div id="test2">
+    <el-form id="addForm" label-width="80px"  :model="addProp" status-icon :rules="rules" ref="addProp">
+        <div>
+            <!--<div align="right">-->
+                <!--<el-button type="text" @click="addChannel()" >新增节目</el-button>-->
+                <!--<el-button type="text" @click="channel()" >所有节目</el-button>-->
+            <!--</div>-->
+            <el-card>
+            <div  class="user_left">
+
+            <el-form-item label="前端展示" prop="propertyShow">
+                <el-input v-model="addProp.propertyShow"></el-input>
+            </el-form-item>
+            <el-form-item label="属性名" prop="propertyName">
+                <el-input v-model="addProp.propertyName" pattern="[a-zA-Z_]{1}" placeholder="限输入英文下划线组合"></el-input>
+            </el-form-item>
+            <el-form-item label="提示" prop="propertyTips">
+                <el-input v-model="addProp.propertyTips"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="submitAdd('addProp')" round>确认添加</el-button>
+                <el-button @click="resetForm('addProp')" round >重置</el-button>
+                <el-button @click="getPropList()" round>管理属性</el-button>
+            </el-form-item>
+            </div>
+            </el-card>
+        </div>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el:'#test2',
+        data() {
+            return {
+                addProp:{
+                    propertyName: '',
+                    propertyShow: '',
+                    propertyTips: ''
+                },
+                rules: {
+                    propertyShow: [
+                        { required: true, message: '请输入属性展示', trigger: 'blur' },
+                    ],
+                    propertyName: [
+                        {required: true, message: '请输入属性名', trigger: 'blur' },
+                        {pattern: /^[A-Za-z_]+$/,message: '格式不正确', trigger: 'blur'}
+                    ]
+                },
+            }
+        },
+        methods:{
+            getPropList() {
+                window.location.href=getURL('pages/vue/property.html')
+            },
+            submitAdd(formName) {
+                var _this = this;
+                _this.$refs[formName].validate((valid) => {
+                    if(valid) {
+                        $.post(getURL("property/manage/insert"), _this.addProp, function (result) {
+                            _this.$alert(result)
+                            if (result == 'success') {
+                                _this.resetForm(formName)
+                            }
+                        })
+                    } else {
+                        return false;
+                    }
+                })
+            },
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            properties() {
+                window.location.href=getURL('pages/vue/property.html')
+            }
+            // ,
+            // channel() {
+            //     window.location.href=getURL('pages/vue/list.html')
+            // },
+            // addChannel() {
+            //     window.location.href=getURL('pages/vue/add.html')
+            // }
+        }
+    });
+</script>
+</body>
+</html>

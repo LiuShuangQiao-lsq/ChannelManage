@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>视频管理</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="test">
+    <el-timeline>
+        <el-timeline-item timestamp="节目" placement="top">
+        <el-card>
+            <h3>{{channelId}}-{{title}}</h3>
+            <h6>视频管理</h6>
+            <table>
+                <tr><td width="50">免费</td><td width="110">更新至第{{freeNumber}}集:</td>
+                    <td width="70">{{freeNumber+1}} -
+                        <el-input
+                                style="width: 40px"
+                                size="mini"
+                                v-model="newFreeNumber">
+                        </el-input>
+                    </td>
+                    <td width="30"><el-button type="text" @click="setFreeNumber()" >更新</el-button>
+                    </td>
+                </tr>
+                <tr><td>VIP</td><td>更新至第{{vipNumber}}集:</td>
+                    <td>{{vipNumber+1}} -
+                    <el-input
+                            style="width: 40px"
+                            size="mini"
+                            v-model="newVipNumber">
+                    </el-input></td>
+                    <td><el-button type="text" @click="setVipNumber()" >更新</el-button></td>
+                </tr>
+                <tr><td>未公开</td><td>第{{vipNumber+1}}集及之后:</td>
+                   <td><el-input
+                           style="width: 40px"
+                           size="mini"
+                           v-model="newPrivateNumber"
+                   > </el-input> -
+                       {{vipNumber}}</td>
+                    <td>
+                    <el-button type="text" @click="setPrivateNumber()" >隐藏</el-button></td>
+                </tr>
+            </table>
+        </el-card>
+        </el-timeline-item>
+        <el-timeline-item timestamp="所有视频" placement="top">
+            <el-card>
+                <el-table
+                        @cell-dblclick="modifyInfo"
+                        :data="videoList"
+                        stripe
+                        style="width: 100%">
+                    <el-table-column
+                            prop="id"
+                            label="ID"
+                            width="80">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="channel_id"
+                            label="节目ID"
+                            width="100"
+                    >
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="video_url"
+                            label="视频"
+                            width="150">
+                        <template scope="scope">
+                            <el-popover
+                                    placement="right"
+                                    title=""
+                                    trigger="click">
+                                <video slot="reference" :src="scope.row.video_url" style="height: 100px;width: 100px"></video>
+                                <video :src="scope.row.video_url" style="max-height: 400px;max-width: 600px" controls></video>
+                            </el-popover>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="video_name"
+                            label="视频标题">
+                    </el-table-column>
+                    <el-table-column
+                            prop="video_desc"
+                            label="简介">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="video_number"
+                            label="剧集"
+                            width="90">
+                    </el-table-column>
+                    <el-table-column
+                            prop="video_state"
+                            label="状态"
+                            width="100">
+                    </el-table-column>
+                    <el-table-column
+                            prop="video_time"
+                            label="更新时间"
+                            width="110">
+                    </el-table-column>
+
+                    <el-table-column
+                            label="操作"
+                            width="90">
+                        <template slot-scope="scope">
+                            <el-button @click.native.prevent="deleteById(scope.$index, videoList,scope.row.id)" type="text" size="small">删除</el-button>
+                        </template>
+                    </el-table-column>
+
+                </el-table>
+            </el-card>
+        </el-timeline-item>
+        <el-timeline-item timestamp="上传视频" placement="top">
+            <el-card>
+                <el-upload
+                        ref="my-upload"
+                        drag
+                        :data="uploadParam"
+                        :action="getUploadURL()"
+                        :on-success="onSuccess"
+                        accept="video/mp4, video/ogg, video/flv,video/avi,video/wmv,video/rmvb"
+                        multiple>
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">上传视频</div>
+                    <div class="el-upload__text">将视频拖到此处，或<em>点击上传</em></div>
+                    <div class="el-upload__tip" slot="tip">只能上传mp4/ogg/flv文件，且不超过10Mb</div>
+                </el-upload><div align="right">
+                <el-button type="text" @click="returnList()" >返回节目列表</el-button>
+            </div>
+            </el-card>
+        </el-timeline-item>
+    </el-timeline>
+
+</div>
+
+<script>
+    new Vue({
+        el:'#test',
+        data() {
+            return {
+                channelId: '',
+                title: '',
+                videoList: [],
+                uploadParam: {
+                    channelId: ''
+                },
+                freeNumber: '',
+                vipNumber: '',
+                newFreeNumber: '',
+                newVipNumber: '',
+                newPrivateNumber: ''
+            };
+        },
+        created: function() {
+            var _this = this;
+            var param = window.location.search;
+            var arr = param.split("=");
+            var param = {
+                channelId:arr[1]
+            };
+            _this.channelId = arr[1];
+            _this.uploadParam.channelId=arr[1];
+            $.get(getURL("getTitle"), {id:arr[1]}, function (result) {
+                _this.title = result;
+            });
+            $.get(getURL("video/number"),{channelId: arr[1]}, function (result) {
+                _this.freeNumber = result.freeNumber;
+                _this.vipNumber = result.vipNumber;
+            });
+            $.get(getURL("video/list"),param, function (result) {
+                _this.videoList = result;
+            });
+        },
+        methods: {
+            renewVideoList() {
+                var _this = this;
+                $.get(getURL("video/list"),{channelId:_this.channelId}, function (result) {
+                    _this.videoList = result;
+                });
+            },
+
+            setFreeNumber() {
+                var _this = this;
+                $.get(getURL("video/number/free"),{channelId: _this.channelId, videoNumber: _this.newFreeNumber}, function (result) {
+                    _this.$alert("更新了"+result+ "集");
+                    if (result > 0) {
+                        _this.freeNumber = Number(_this.newFreeNumber);
+                        if (_this.freeNumber > _this.vipNumber) {
+                            _this.vipNumber = _this.freeNumber
+                        }
+                        _this.renewVideoList()
+                    }
+                });
+            },
+            setVipNumber() {
+                var _this = this;
+                $.get(getURL("video/number/vip"),{channelId: _this.channelId, videoNumber: _this.newVipNumber}, function (result) {
+                    _this.$alert("更新了"+result+ "集");
+                    if (result > 0) {
+                        _this.vipNumber = Number(_this.newVipNumber);
+                        _this.renewVideoList()
+                    }
+                });
+
+            },
+            setPrivateNumber() {
+                var _this = this;
+                $.get(getURL("video/number/private"),{channelId: _this.channelId, videoNumber: _this.newPrivateNumber}, function (result) {
+                    _this.$alert("隐藏了"+result+ "集");
+                    if (result > 0) {
+                        _this.vipNumber = Number(_this.newPrivateNumber)-1;
+                        if (_this.vipNumber < _this.freeNumber) {
+                            _this.freeNumber = _this.vipNumber
+                        }
+                        _this.renewVideoList()
+                    }
+                });
+            },
+            deleteById(index,videoList,id) {
+                var _this = this;
+                _this.$confirm('此操作将永久删除'+id+', 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.get(getURL("video/delete"), {id:id}, function (result) {
+                    _this.$alert(result);
+                    if (result == 'success') {
+                        videoList.splice(index, 1); //删除表格中的一行
+                    }
+                });
+            }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            })
+            },
+            modifyInfo(row, column) {
+                var _this = this;
+
+                var va = {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    inputPattern:  /^[\s\S]*.*[^\s][\s\S]*$/,
+                    inputErrorMessage: '修改后的信息不能为空'
+                };
+
+                if (column.property == "video_desc" || column.property == "video_name" || column.property == "video_number") {
+                    if (column.property == "video_number") {
+                        va = {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            inputPattern:  /^\d{0,4}$/,
+                            inputErrorMessage: '剧集必须为数字'
+                        }
+                    }
+                    _this.$prompt(column.label, '修改视频'+row.id, va).then(({ value }) => {
+                        var param = {
+                            id:row.id,
+                            column:column.property,
+                            value:value
+                        };
+                    $.post(getURL("video/modify"), param, function(result) {
+                        if (result == "success") {
+                            row[column.property] = value;
+                            _this.$message({
+                                type: 'success',
+                                message: result
+                            });
+                        }
+                    })
+                }).catch(() => {
+                        this.$message({
+                        type: 'info',
+                        message: '取消修改'
+                    });
+                });
+                }
+            },
+            getUploadURL() {
+                return getURL("video/upload")
+            },
+            onSuccess(response) {
+                this.videoList =  response;
+            },
+            returnList() {
+                window.location.href=getURL('pages/vue/list.html')
+            }
+        }
+    })
+</script>
+</body>
+</html>

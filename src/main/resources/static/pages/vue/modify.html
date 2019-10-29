@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>修改节目信息</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+    <style>
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+</head>
+<body>
+<div id="test1">
+    <div style="margin: 10px;"></div>
+    <el-form label-width="80px" name="modifyForm" id="modifyForm">
+        <el-card>
+        <div class="user_left" id="property">
+
+            <el-form-item label="节目名称">
+                <el-input id="title" name="title" v-model="title"></el-input>
+            </el-form-item>
+            <el-form-item label="分类" prop="type">
+                <el-select v-model="type" @change="selectTags" style="width:100%" placeholder="请选择">
+                    <el-option
+                            v-for="item in types"
+                            :key="item.id"
+                            :label="item.type"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="标签" prop="tag">
+                <el-select v-model="t" multiple style="width:100%" placeholder="请选择标签">
+                    <el-option
+                            v-for="item in tags"
+                            :key="item"
+                            :label="item"
+                            :value="item">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+            <div  v-for="item in list">
+                <el-form-item :label="item.propertyShow" >
+                    <el-input :id=item.propertyName :name=item.propertyName v-model="item.pvalue"></el-input>
+                </el-form-item>
+            </div>
+            <el-form-item label="推荐系数">
+                <el-rate v-model="ratings" style="margin-top: 10px;margin-left: 1px"></el-rate>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="submitForm()" round>确认修改</el-button>
+                <el-button @click="getList()" round >返回节目列表</el-button>
+            </el-form-item>
+        </div>
+        <el-input type="hidden" id="id" name="id" v-model="id"></el-input>
+        </el-card>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el:'#test1',
+        data() {
+            return {
+                list:[],
+                title:'',
+                type:'',
+                id:'',
+                types:[],
+                tags:[],
+                t: [],
+                ratings:1
+            }
+        },
+        created: function() {
+            var _this = this;
+            var lists = [];//属性集合
+            $.get(getURL("properties"), function (result) {
+                lists = eval(result);
+            });
+            $.get(getURL("types"), function (result) {
+                _this.types = result
+            });
+
+            //截取前一个界面传的id
+            var param = window.location.search;
+            var arr = param.split("=");
+            var param = {
+                id:arr[1]
+            };
+
+            $.get(getURL("get"),param, function(result){
+                var valueLists = [];//带有value的属性集合
+                result = eval(result);
+                _this.type = Number(result['type']);
+                _this.t= result['tag'];
+                _this.title = result['title'];//title
+                _this.id = result['id'];//id
+                _this.ratings = result['ratings'];
+                for (var index in lists){
+                    var item = lists[index];
+                    item.pvalue=result[item.propertyName];
+                    valueLists.push(item);
+                }
+                $.get(getURL("type/tag"), {type: _this.type}, function (result) {
+                    _this.tags=result;
+                });
+                _this.list=valueLists;//list
+            })
+        },
+        methods:{
+            getList() {
+                window.location.href=getURL('pages/vue/list.html')
+            },
+            selectTags() {
+                var _this = this;
+                _this.t = [];
+                $.get(getURL("type/tag"), {type: _this.type}, function (result) {
+                    _this.tags=result;
+                })
+            },
+            submitForm() {
+                var _this = this;
+                var list = this.list;
+                if (_this.title == '') {
+                    _this.$alert('请输入节目名称', '提示', {
+                        confirmButtonText: '确定'
+                    })
+                } else {
+                    var data = {    //处理参数
+                        id: _this.id,
+                        title: _this.title,
+                        ratings: _this.ratings,
+                        tag:JSON.stringify(_this.t),
+                        type: _this.type
+                    };
+                    for (var i = 0; i < list.length; i++) {
+                        var obj = list[i];
+                        data[obj.propertyName] = obj.pvalue
+                    }
+                    $.post(getURL("modify"), data, function (data) {
+                        _this.$alert(data);
+                    })
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

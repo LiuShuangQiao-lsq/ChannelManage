@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>海报管理</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="test">
+    <el-timeline>
+        <el-timeline-item timestamp="节目" placement="top">
+            <el-card>
+                <h3>{{channelId}}-{{title}}</h3>海报管理
+            </el-card>
+        </el-timeline-item>
+        <el-timeline-item timestamp="所有海报" placement="top">
+            <el-card>
+                <el-table
+                        @cell-dblclick="modifyInfo"
+                        :data="picList"
+                        stripe
+                        style="width: 100%">
+                    <el-table-column
+                            prop="id"
+                            label="ID"
+                            width="120">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="channel_id"
+                            label="节目ID"
+                            width="150"
+                    >
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="pic_url"
+                            label="图片"
+                            width="200">
+                        <template scope="scope">
+                            <el-popover
+                                    placement="right"
+                                    title=""
+                                    trigger="click">
+                                <el-image slot="reference" fit="cover" :src="scope.row.pic_url" :alt="scope.row.pic_url" style="height: 100px;width: 100px"></el-image>
+                                <el-image
+                                        style="max-width: 600px; max-height: 400px"
+                                        fit="contain"
+                                        :src="scope.row.pic_url"></el-image>
+                            </el-popover>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="pic_name"
+                            label="图片名">
+                    </el-table-column>
+                    <el-table-column
+                            prop="pic_desc"
+                            label="简介">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="is_front"
+                            label="设为主海报"
+                            width="150">
+                        <template scope="scope">
+                            <el-switch
+                                    v-model="scope.row.is_front"
+                                    :active-value="1"
+                                    :inactive-value="0"
+                                    active-color="#13ce66"
+                                    @change=changeMain(scope.row)>
+                            </el-switch>
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                            label="操作"
+                            width="120">
+                        <template slot-scope="scope">
+                            <el-button @click.native.prevent="deleteById(scope.$index, picList,scope.row.id)" type="text" size="small">删除</el-button>
+                        </template>
+                    </el-table-column>
+
+                </el-table>
+            </el-card>
+        </el-timeline-item>
+        <el-timeline-item timestamp="上传海报" placement="top">
+            <el-card>
+                <el-upload
+                        ref="my-upload"
+                        drag
+                        :data="uploadParam"
+                        :action="getUploadURL()"
+                        :on-success="onSuccess"
+                        accept="image/png, image/jpeg"
+                        multiple>
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">上传海报</div>
+                    <div class="el-upload__text">将图片拖到此处，或<em>点击上传</em></div>
+                    <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+                </el-upload><div align="right">
+                <el-button type="text" @click="returnList()" >返回节目列表</el-button>
+            </div>
+            </el-card>
+        </el-timeline-item>
+
+    </el-timeline>
+
+</div>
+
+<script>
+    new Vue({
+        el:'#test',
+        data() {
+            return {
+                channelId: '',
+                title: '',
+                picList: [],
+                uploadParam: {
+                    channelId: ''
+                }
+            };
+        },
+        created: function() {
+            var _this = this;
+            var param = window.location.search;
+            var arr = param.split("=");
+            var param = {
+                channelId:arr[1]
+            };
+            _this.channelId = arr[1];
+            _this.uploadParam.channelId=arr[1];
+            $.get(getURL("getTitle"), {id:arr[1]}, function (result) {
+               _this.title = result;
+            });
+            $.get(getURL("pic/list"),param, function (result) {
+                _this.picList = result;
+            });
+        },
+        methods: {
+            changeMain(row) {
+                var _this = this;
+                var param = {
+                    channelId: _this.channelId,
+                    id: row.id,
+                    isFront:row.is_front
+                };
+                $.post(getURL("pic/front"), param, function (result) {
+                    if (result != null) {
+                        _this.picList = result;
+                    } else {
+                        row.is_front = 1-row.is_front
+                        _this.$alert("设置失败");
+                    }
+                })
+            },deleteById(index,picList,id) {
+                var _this = this;
+                _this.$confirm('此操作将永久删除'+id+', 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.get(getURL("pic/delete"), {id:id}, function (result) {
+                        _this.$alert(result);
+                        if (result == 'success') {
+                            picList.splice(index, 1); //删除表格中的一行
+                        }
+                    });
+                }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            })
+            },
+            modifyInfo(row, column) {
+                var _this = this;
+
+                console.log("row" + row.id)
+                console.log(column.property)
+                console.log(event)
+
+                if (column.property == "pic_desc" || column.property == "pic_name") {
+                    _this.$prompt(column.label, '修改海报'+row.id, {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        inputPattern:  /^[\s\S]*.*[^\s][\s\S]*$/,
+                        inputErrorMessage: '修改后的信息不能为空'
+                    }).then(({ value }) => {
+                        var param = {
+                            id:row.id,
+                            column:column.property,
+                            value:value
+                        };
+                        $.post(getURL("pic/modify"), param, function(result) {
+                            if (result == "success") {
+                                row[column.property] = value;
+                                _this.$message({
+                                    type: 'success',
+                                    message: result
+                                });
+                            }
+                        })
+                    }).catch(() => {
+                        this.$message({
+                        type: 'info',
+                        message: '取消修改'
+                        });
+                    });
+                }
+            },
+            getUploadURL() {
+                return getURL("pic/uploadAndAdd")
+            },
+            onSuccess(response) {
+                this.picList =  response;
+            },
+            returnList() {
+                window.location.href=getURL('pages/vue/list.html')
+            }
+        }
+    })
+</script>
+</body>
+</html>

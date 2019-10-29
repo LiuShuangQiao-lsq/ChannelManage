@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tb.demo.mapper.FileMapper">
+
+    <insert id="addPic">
+        insert into channel_pic(channel_id, pic_url, pic_name) values
+        <foreach collection="picList" item="pic" separator=",">
+            <if test="pic.newName != '上传失败'">
+            (#{channelId}, #{pic.newName}, #{pic.fileName})
+            </if>
+        </foreach>
+    </insert>
+
+    <select id="picList" resultType="java.util.HashMap">
+        select * from channel_pic
+          where channel_id = #{channelId}
+    </select>
+
+    <delete id="deletePicByChannelId">
+        delete from channel_pic
+          where channel_id = #{channelId}
+    </delete>
+
+    <delete id="deletePicById">
+        delete from channel_pic
+          where id = #{id}
+    </delete>
+
+    <select id="getPicUrlById" resultType="String">
+        select pic_url from channel_pic
+          where id = #{id}
+    </select>
+
+    <update id="modifyIsFrontByChannelId">
+        update channel_pic
+          set is_front=0
+          where channel_id = #{channelId}
+    </update>
+
+    <update id="modifyIsFrontById">
+        update channel_pic
+          set is_front=#{isFront}
+          where id = #{id}
+    </update>
+
+    <update id="modifyPicInfo">
+        update channel_pic
+          set ${column}=#{value}
+          where id = #{id}
+    </update>
+
+
+
+    <insert id="addVideo">
+        insert into channel_video(channel_id, video_url, video_name, video_state) values
+        <foreach collection="videos" item="video" separator=",">
+            <if test="video.newName != '上传失败'">
+                (#{channelId}, #{video.newName}, #{video.fileName}, 0)
+            </if>
+        </foreach>
+    </insert>
+
+    <update id="modifyVideoInfo">
+        update channel_video
+          set ${column}=#{value}
+          where id = #{id}
+    </update>
+
+    <select id="videoList" resultType="java.util.HashMap">
+        select id,channel_id,video_url,video_name,video_desc,video_number,video_time,
+        (case video_state when 0 then '未公开' when 2 then 'VIP' when 3 then '免费' else '未知' end) as video_state
+        from channel_video
+          where channel_id = #{channelId} order by video_number
+    </select>
+
+    <delete id="deleteVideoByChannelId">
+        delete from channel_video
+          where channel_id = #{channelId}
+    </delete>
+
+    <delete id="deleteVideoById">
+        delete from channel_video
+          where id = #{id}
+    </delete>
+
+    <select id="getVideoUrlById" resultType="String">
+        select video_url from channel_video
+          where id = #{id}
+    </select>
+
+
+    <select id="selectMaxFreeNumber" resultType="Integer">
+        select IFNULL(max(video_number),0)
+        from channel_video
+        where channel_id = #{channelId} and video_state = 3
+    </select>
+
+    <select id="selectMaxVIPNumber" resultType="Integer">
+        select IFNULL(max(video_number),0)
+        from channel_video
+        where channel_id = #{channelId} and video_state in (2, 3)
+    </select>
+
+    <update id="modifyVideoToFree">
+        update channel_video set video_state = 3, video_time = now()
+        where video_number &gt;
+          (select a.video_number from
+            (select IFNULL(max(video_number),0) video_number from channel_video where channel_id = #{channelId} and video_state = 3) a)
+        and video_number &lt;= #{videoNumber} and channel_id = #{channelId}
+    </update>
+
+    <update id="modifyVideoToVIP">
+        update channel_video set video_state = 2, video_time = now()
+        where video_number &gt;
+          (select a.video_number from
+            (select IFNULL(max(video_number),0) video_number from channel_video where channel_id = #{channelId} and video_state in (2, 3)) a)
+        and video_number &lt;= #{videoNumber} and channel_id = #{channelId}
+    </update>
+
+    <update id="modifyVideoToPrivate">
+        update channel_video set video_state = 0, video_time = now()
+        where channel_id = #{channelId} and video_number &gt;=  #{videoNumber} and video_state != 0
+    </update>
+
+</mapper>

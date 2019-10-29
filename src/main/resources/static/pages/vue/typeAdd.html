@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加分类</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+    <style>
+        .el-tag + .el-tag {
+            margin-left: 10px;
+        }
+        .button-new-tag {
+            margin-left: 10px;
+            height: 32px;
+            line-height: 30px;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .input-new-tag {
+            width: 90px;
+            margin-left: 10px;
+            vertical-align: bottom;
+        }
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+</head>
+<body>
+<div id="typeAdd">
+    <el-card>
+        <div class="user_left">
+
+            <el-form label-width="80px">
+                <el-form-item label="节目分类">
+                    <el-input v-model="ty"></el-input>
+                </el-form-item>
+                <el-form-item label="节目标签">
+                    <el-card shadow="never">
+                        <el-tag
+                                v-for="tag in ta"
+                                :key="tag"
+                                closable
+                                :disable-transitions="false"
+                                @close="handleClose(tag)">
+                            {{tag}}
+                        </el-tag>
+                        <el-input
+                                class="input-new-tag"
+                                v-if="inputVisible"
+                                v-model="inputValue"
+                                ref="saveTagInput"
+                                size="small"
+                                @keyup.enter.native="handleInputConfirm"
+                                @blur="handleInputConfirm"
+                        >
+                        </el-input>
+                        <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 添加标签</el-button>
+                    </el-card>
+                </el-form-item>
+
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm()" round>确认添加</el-button>
+                    <el-button @click="resetForm()" round >重置</el-button>
+                    <el-button @click="toList()" round >管理分类</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </el-card>
+</div>
+
+<script>
+    new Vue ({
+        el:'#typeAdd',
+        data() {
+            return {
+                ta: [],
+                ty: '',
+                inputVisible: false,
+                inputValue: ''
+            }
+        },
+        methods: {
+            handleClose(tag) {
+                var _this = this;
+                _this.ta.splice(_this.ta.indexOf(tag), 1);
+            },
+            showInput() {
+                this.inputVisible = true;
+                this.$nextTick(_ => {
+                    this.$refs.saveTagInput.$refs.input.focus();
+                });
+            },
+            handleInputConfirm() {
+                var _this = this;
+                var inputValue = _this.inputValue;
+                if (inputValue !=  '') {
+                    _this.ta.push(inputValue)
+                }
+                _this.inputVisible = false;
+                _this.inputValue = '';
+            },
+            submitForm() {
+
+                var _this = this;
+
+                if (_this.ty == '') {
+                    _this.$alert("请输入分类名称")
+                } else {
+                    var param = {
+                        type: _this.ty,
+                        tags: JSON.stringify(_this.ta)
+                    };
+                    $.post(getURL("type/add"), param, function (result) {
+                        _this.$alert(result);
+                        if (result == "success") {
+                            _this.resetForm()
+                        }
+                    })
+                }
+            },
+            resetForm() {
+                this.ta=[];
+                this.ty='';
+                this.inputVisible=false;
+                this.inputValue=''
+            },
+            toList() {
+                window.location.href=getURL("pages/vue/type.html");
+            }
+        }
+    })
+</script>
+
+</body>
+</html>

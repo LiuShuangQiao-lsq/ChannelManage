@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>栏目管理</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../js/url.js"></script>
+    <script src="../../js/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../element-ui-2.4.11/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../../element-ui-2.4.11/index.js"></script>
+</head>
+<body>
+<div id = "type">
+    <el-card>
+        <el-table
+                :data="types"
+                style="width: 100%">
+            <el-table-column
+                    prop="id"
+                    label="ID"
+                    width="90"
+                    show-overflow-tooltip
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="type"
+                    label="分类"
+                    width="120"
+                    show-overflow-tooltip
+            >
+            </el-table-column>
+
+            <el-table-column
+                    prop="tags"
+                    label="所有标签"
+                    show-overflow-tooltip
+            >
+                <template slot-scope="scope" >
+                    <el-tag v-for="t in scope.row.tags" >{{t}}</el-tag>
+                </template>
+            </el-table-column>
+
+            <el-table-column
+                    fixed="right"
+                    label="操作"
+                    width="120">
+                <template slot-scope="scope">
+                    <el-button @click="edit(scope.row.id)" type="text" size="small">管理</el-button>
+                    <el-button @click.native.prevent="deleteById(scope.$index,scope.row.id,scope.row.type)" type="text" size="small">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </el-card>
+</div>
+<script>
+    new Vue({
+        el:'#type',
+        data() {
+            return {
+                types:{}
+            }
+        },
+        created: function () {
+            var _this = this;
+            $.get(getURL("type/list"), function (result) {
+                _this.types=result
+            })
+        },
+        methods: {
+            deleteById(index,id,type) {
+                var _this = this;
+                _this.$confirm('此操作将永久删除'+type+'及其所有标签, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.get(getURL("type/delete"), {id:id}, function (result) {
+                        _this.$alert(result);
+                        if (result == 'success') {
+                            _this.types.splice(index, 1);//删除表格中的一行
+                        }
+                    })
+            }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            })
+            },
+            edit(data) {
+                window.location.href = getURL("pages/vue/typeManage.html") + "?id=" + data
+            }
+        }
+    })
+</script>
+</body>
+</html>

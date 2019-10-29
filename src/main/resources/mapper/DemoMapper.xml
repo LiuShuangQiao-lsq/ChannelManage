@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tb.demo.mapper.DemoMapper">
+
+    <insert id="insertToChannel" parameterType="com.tb.demo.pojo.Channel" useGeneratedKeys="true" keyProperty="id">
+      insert into channel(title,type,tag,ratings)
+               values (
+                    #{title},#{type},#{tag},#{ratings}
+               )
+   </insert>
+    <insert id="insertToProperty" >
+      insert into channel_property
+               values (
+                      null, #{id},#{ name},#{ value}
+               )
+   </insert>
+    <delete id="deleteFromChannel">
+        delete from channel
+          where id = #{id}
+    </delete>
+
+    <select id="getTitle" resultType="String">
+        select title from channel where id = #{id}
+    </select>
+
+    <delete id="deleteFromProperty">
+        delete from channel_property
+          where channel_id = #{channel_id}
+    </delete>
+    <update id="modifyChannel">
+        update channel
+          set title = #{title}, type=#{type}, tag=#{tag}, ratings=#{ratings}
+          where id = #{id}
+    </update>
+    <update id="modifyProperty">
+        update channel_property
+          set property_value = #{value}
+          where channel_id = #{id} and property_name = #{name}
+    </update>
+
+    <!--<select id="selectChannelById" resultType="Map">-->
+        <!--select channel_type.type,title,tag from channel,channel_type where channel.id = #{id} and channel.type= channel_type.id-->
+    <!--</select>-->
+
+    <select id="selectChannelById" resultType="Map">
+        select type,title,tag,ratings from channel where id = #{id}
+    </select>
+
+    <!-- 条件查询，加条件 -->
+    <select id="getChannelCount" resultType="int">
+        select count(DISTINCT c.id)
+        from channel c
+        left join channel_property p
+        on c.id = p.channel_id
+        where 1=1
+        <if test="id != null and id != ''">
+            and c.id like #{id}
+        </if>
+        <if test="type != null and type != ''">
+            and c.type = #{type}
+        </if>
+        <if test="type != null and type != '' and tag != null and tag != ''">
+            and c.tag like #{tag}
+        </if>
+        <if test="title != null and title != ''">
+            and c.title like #{title}
+        </if>
+        <if test="property_name != null and property_name != '' and property_value != null and property_value != ''">
+            and p.property_name = #{property_name} and p.property_value like #{property_value}
+        </if>
+    </select>
+
+
+    <!--<select id="selectAllFromChannel" resultType="Map">-->
+        <!--select channel.id as id, channel_type.type as type, title,tag-->
+        <!--from channel,channel_type-->
+        <!--where channel.type= channel_type.id-->
+        <!--limit #{first}, #{limit}-->
+    <!--</select>-->
+
+    <select id="selectAllFromChannel" resultType="Map" parameterType="Map">
+        select c.id as id, t.type as type, title,tag,ratings
+        from channel c left join channel_type t
+        on c.type = t.id
+        left join channel_property p
+        on c.id = p.channel_id
+        where 1=1
+        <if test="id != null and id != ''">
+            and c.id like #{id}
+        </if>
+        <if test="type != null and type != ''">
+            and c.type = #{type}
+        </if>
+        <if test="type != null and type != '' and tag != null and tag != ''">
+            and c.tag like #{tag}
+        </if>
+        <if test="title != null and title != ''">
+            and c.title like #{title}
+        </if>
+        <if test="property_name != null and property_name != '' and property_value != null and property_value != ''">
+            and p.property_name = #{property_name} and p.property_value like #{property_value}
+        </if>
+        GROUP BY c.id
+        limit #{first}, #{limit}
+    </select>
+
+    <select id="selectPropertiesByChannelId" resultType="java.util.HashMap">
+      select property_name, property_value from channel_property
+        where channel_id = #{channelId}
+    </select>
+
+    <select id="getAllPropertyMang" resultType="com.tb.demo.pojo.PropertyManage">
+      select * from property_manage
+    </select>
+
+    <delete id="deletePropertyMang">
+        delete from property_manage
+          where id = #{id}
+    </delete>
+
+    <insert id="insertPropertyMang" parameterType="com.tb.demo.pojo.PropertyManage">
+        insert into property_manage
+          value (
+            null, #{propertyName}, #{propertyShow}, #{propertyTips}
+          )
+    </insert>
+</mapper>

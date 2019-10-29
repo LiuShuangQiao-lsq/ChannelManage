@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../layui/layui.js" charset="utf-8"></script>
+    <script src="../../js/url.js"></script>
+    <link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+    <style>
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+
+</head>
+<body>
+<script>
+    function propertyAdd() {
+        if ($("#propertyShow").val() == '' || $("#propertyName").val() == '') {
+            alert("请填写完整信息");
+        } else {
+            $.ajax({
+                type: "POST",
+                url: getURL("property/manage/insert"),
+                data: new FormData($("#addProperty")[0]),
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    $("input[type=reset]").trigger("click");
+                    alert(data)
+                }
+            })
+        }
+    }
+</script>
+<form class="layui-form" name="addProperty" id="addProperty">
+    <div class="user_left" id="properties">
+        <div class="layui-form-item">
+            <label class="layui-form-label">前端展示</label>
+            <div class="layui-input-block">
+                <input type="text" id="propertyShow" name="propertyShow" lay-verify="required" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">属性名</label>
+            <div class="layui-input-block">
+                <input type="text" id="propertyName" name="propertyName" lay-verify="required" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">提示</label>
+            <div class="layui-input-block">
+                <input type="text" id="propertyTips" name="propertyTips" lay-verify="required" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item" style="margin-left: 5%;">
+        <div class="layui-input-block">
+            <input type="button" id="insertProperty" onclick="return propertyAdd()" class="layui-btn" value="确认添加" />
+            <input type="reset" name="reset" style="display: none;" />
+            <input type="button" id="propertyList" class="layui-btn" onclick="window.location.href=getURL('pages/property/propertyList.html')" value="查看所有属性"/>
+        </div>
+    </div>
+</form>
+</body>
+</html>

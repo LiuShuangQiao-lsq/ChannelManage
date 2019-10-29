@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="../../js/jquery-1.9.0.min.js" ></script>
+    <script src="../../layui/layui.js" charset="utf-8"></script>
+    <script src="../../js/url.js"></script>
+    <link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+    <style>
+        .user_left{ width:45%; float: left; margin:20px 0 0 5%; }
+    </style>
+    <title>Title</title>
+    <script>
+        $(function() {
+            var param = window.location.search;
+            var arr = param.split("=");
+            var id = arr[1];
+            $.ajax({
+                type:"get",
+                url:getURL("properties"),
+                dataType : "json",
+                success:function(data) {
+                    for(var i = 0 ; i  < data.length ; i++){
+                        str =   "<div class='layui-form-item'><label class='layui-form-label'>"
+                            +data[i].propertyShow
+                            +"</label><div class='layui-input-block'><input type='text' id='"
+                            +data[i].propertyName
+                            +"' name='"
+                            + data[i].propertyName+
+                            "' class='layui-input'></div></div>"
+                        var html = document.getElementById("property").innerHTML;
+                        document.getElementById("property").innerHTML= html + str;
+                    }
+                    $.ajax({
+                        type:"get",
+                        url:getURL("get"),
+                        data:{
+                            id: id
+                        },
+                        dataType : "json",
+                        success:function(data) {
+                            for(var key in data){
+                                $('#'+key).val(data[key])
+                            }
+                        }
+                    })
+                }
+            });
+        })
+    </script>
+</head>
+<body>
+<script>
+    function check() {
+        if ($("#title").val() == '') {
+            alert("请填写完整信息");
+        } else {
+            $.ajax({
+                type: "POST",
+                url: getURL("modify"),
+                data: new FormData($("#addForm")[0]),
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    alert(data)
+                }
+            })
+        }
+    }
+</script>
+<form class="layui-form" name="addForm" id="addForm">
+    <div class="user_left" id="property">
+        <div class="layui-form-item">
+            <label class="layui-form-label">节目名称</label>
+            <div class="layui-input-block">
+                <input type="hidden" id="id" name="id"  class="layui-input">
+                <input type="text" id="title" name="title" lay-verify="required" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item" style="margin-left: 5%;">
+        <div class="layui-input-block">
+            <input type="button" id="modify" onclick="return check()" class="layui-btn" value="确认修改" />
+            <input type="button" id="channelList" class="layui-btn" onclick="window.location.href=getURL('pages/property/list.html')" value="返回节目列表"/>
+        </div>
+    </div>
+</form>
+</body>
+</html>
